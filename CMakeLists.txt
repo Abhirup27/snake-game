@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-
+# Update to C++20 for better compatibility with latest GCC
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -16,7 +16,7 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 else()
-    # GCC/Clang equivalent
+    # GCC/Clang equivalent settings
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 endif()
@@ -36,7 +36,7 @@ if(MSVC)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     # GCC and Clang equivalent for AVX2
     add_compile_options(-mavx2)
-
+    
     # Additional optimization flags for GCC
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         add_compile_options(-O3 -flto -march=native -ftree-vectorize)
@@ -61,12 +61,12 @@ set_property(TARGET "${CMAKE_PROJECT_NAME}" PROPERTY CXX_STANDARD 20)
 # Resource path configuration
 if(PRODUCTION_BUILD)
     # setup the ASSETS_PATH macro to be in the root folder of your exe
-    target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="./resources/")
-    target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=1)
+    target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="./resources/") 
+    target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=1) 
 else()
     # This is useful to get an ASSETS_PATH in your IDE during development
     target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
-    target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=0)
+    target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=0) 
 endif()
 
 # Add source files
@@ -82,7 +82,7 @@ if(MSVC)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     # Additional warnings for GCC/Clang
     target_compile_options("${CMAKE_PROJECT_NAME}" PRIVATE -Wall -Wextra)
-
+    
     # Position Independent Code - often needed for modern GCC
     set_property(TARGET "${CMAKE_PROJECT_NAME}" PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -91,11 +91,11 @@ endif()
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 
 # Link libraries
-target_link_libraries("${CMAKE_PROJECT_NAME}"
-    sfml-graphics
-    sfml-window
-    sfml-system
-    sfml-audio
+target_link_libraries("${CMAKE_PROJECT_NAME}" 
+    sfml-graphics 
+    sfml-window 
+    sfml-system 
+    sfml-audio 
     sfml-network
     imgui
     ImGui-SFML::ImGui-SFML

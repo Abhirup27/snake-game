@@ -1,86 +1,64 @@
+#include "AssetManager.hpp"
+#include "Menu.hpp"
+#include "SFML/Graphics/Font.hpp"
+#include "SFML/Graphics/Rect.hpp"
+#include "SFML/Graphics/Sprite.hpp"
+#include "SFML/Graphics/Texture.hpp"
+#include "SFML/Graphics/View.hpp"
 #include <SFML/Graphics.hpp>
+#include <cstdlib>
+
 #pragma region imgui
 #include "imgui-SFML.h"
 #include "imgui.h"
 #include "imguiThemes.h"
 #pragma endregion
 
+enum directions { down, right, up, left };
+
+sf::Font g_font = Engine::AssetManager::GetInstance()->GetFont("fallback");
+sf::Texture g_texture =
+    Engine::AssetManager::GetInstance()->GetTexture("debug");
+
 int main() {
+  srand(static_cast<unsigned int>(time(nullptr)));
+  Engine::AssetManager *assets = Engine::AssetManager::GetInstance();
   unsigned int width{640U};
   unsigned int height{480U};
+
   sf::RenderWindow *window =
       new sf::RenderWindow(sf::VideoMode({width, height}), "Game");
 
-#pragma region imgui
-  ImGui::SFML::Init(*window);
-  // you can use whatever imgui theme you like!
-  // ImGui::StyleColorsDark();
-  // imguiThemes::yellow();
-  // imguiThemes::gray();
-  imguiThemes::green();
-  // imguiThemes::red();
-  // imguiThemes::gray();
-  // imguiThemes::embraceTheDarkness();
+  sf::View *view = new sf::View(sf::FloatRect(
+      {0, 0}, {static_cast<float>(width), static_cast<float>(height)}));
+  view->setCenter({width / 2.0f, height / 2.0f});
+  window->setView(*view);
 
-  ImGuiIO &io = ImGui::GetIO();
-  (void)io;
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-  // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad
-  // Controls
-  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
-  io.FontGlobalScale = 2.f;
-  ImGuiStyle &style = ImGui::GetStyle();
-  style.Colors[ImGuiCol_WindowBg].w = 0.5f;
-  // style.Colors[ImGuiCol_DockingEmptyBg].w = 0.f;
-#pragma endregion
+  window->setFramerateLimit(60U);
 
+  Engine::StateMachine stateMachine;
+  stateMachine.AddState("menu", std::make_unique<Menu>(stateMachine), false);
   sf::Clock clock;
   while (window->isOpen()) {
 
-    while (const std::optional event = window->pollEvent()) {
-#pragma region imgui
-      ImGui::SFML::ProcessEvent(*window, *event);
-#pragma endregion
-
-      if (event->is<sf::Event::Closed>()) {
-        window->close();
-      } else if (const auto *keyPressed =
-                     event->getIf<sf::Event::KeyPressed>()) {
-        if (keyPressed->scancode == sf::Keyboard::Scancode::Escape) {
-          window->close();
-        }
-      }
-    }
     sf::Time deltaTime = clock.restart();
     float deltaTimeSeconds = deltaTime.asSeconds();
 
     // make sure delta time stays within normal bounds, like between one FPS and
     // zero FPS
-    deltaTimeSeconds = std::min(deltaTimeSeconds, 1.f);
-    deltaTimeSeconds = std::max(deltaTimeSeconds, 0.f);
+    deltaTimeSeconds = std::min(deltaTimeSeconds, 1.F);
+    deltaTimeSeconds = std::max(deltaTimeSeconds, 0.F);
 
-#pragma region imgui
-    ImGui::SFML::Update(*window, deltaTime);
-
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, {});
-    ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, {});
-    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-    ImGui::PopStyleColor(2);
-#pragma endregion
-
-    ImGui::Begin("Game");
-    ImGui::Button("Button");
-    ImGui::Text("Hello SFML");
-    ImGui::End();
     window->clear();
-#pragma region imgui
-    ImGui::SFML::Render(*window);
-#pragma endregion
+    stateMachine.ProcessStateChanges();
+    if (stateMachine.GetCurrentState()) {
+      stateMachine.GetCurrentState()->HandleInput(*window, *view);
+      stateMachine.GetCurrentState()->Update(deltaTimeSeconds, *window);
+      stateMachine.GetCurrentState()->Draw(*window, *view);
+    }
     window->display();
   }
-#pragma region imgui
-  ImGui::SFML::Shutdown();
-#pragma endregion
+  Engine::AssetManager::Cleanup();
   delete window;
   return 0;
 }
